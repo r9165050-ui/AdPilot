@@ -39,6 +39,9 @@ Preferred communication style: Simple, everyday language.
 - **Template System**: Pre-built ad templates categorized by platform (Facebook, Instagram, both) and campaign objectives
 - **AI-Powered Tools**: OpenAI-powered ad copy generation and optimization for improved campaign performance
 - **Platform Integration**: Designed for Meta advertising platforms with dedicated Facebook and Instagram campaign support
+- **Real-Time Optimization**: AI-powered campaign performance analysis with automated optimization recommendations
+- **Facebook Marketing API Integration**: Direct campaign publishing to Facebook Ads Manager with OAuth authentication
+- **Campaign Optimization Dashboard**: Comprehensive optimization insights with performance scoring and actionable recommendations
 
 ### Authentication and Authorization
 - **User Management**: User registration and authentication system with password-based authentication
@@ -46,6 +49,11 @@ Preferred communication style: Simple, everyday language.
 - **Demo Mode**: Mock user implementation for development and demonstration purposes
 
 ## External Dependencies
+
+### API Services
+- **Facebook Marketing API**: Direct campaign publishing with Facebook App ID and App Secret for OAuth authentication
+- **OpenAI API**: AI-powered ad copy generation and optimization recommendations
+- **Stripe API**: Payment processing for campaign funding with public and secret key authentication
 
 ### Database Services
 - **Neon Database**: Serverless PostgreSQL database for production data storage

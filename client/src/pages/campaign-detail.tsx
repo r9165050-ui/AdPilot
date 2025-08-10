@@ -3,9 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Target, DollarSign, TrendingUp, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Calendar, Target, DollarSign, TrendingUp, Users, Zap, Facebook } from "lucide-react";
 import type { Campaign } from "@shared/schema";
 import CampaignPayment from "@/components/payment/campaign-payment";
+import { OptimizationPanel } from "@/components/campaigns/OptimizationPanel";
+import { FacebookIntegration } from "@/components/campaigns/FacebookIntegration";
 
 export default function CampaignDetail() {
   const { id } = useParams();
@@ -152,25 +155,25 @@ export default function CampaignDetail() {
                   <span>Target Audience</span>
                 </div>
                 <div className="space-y-2 text-sm">
-                  {'ageRange' in campaign.targetAudience && campaign.targetAudience.ageRange && (
+                  {campaign.targetAudience && 'ageRange' in campaign.targetAudience && campaign.targetAudience.ageRange && typeof campaign.targetAudience.ageRange === 'object' && 'min' in campaign.targetAudience.ageRange && 'max' in campaign.targetAudience.ageRange && (
                     <div>
                       <span className="text-gray-600">Age Range:</span>
                       <span className="ml-2 font-medium">
-                        {campaign.targetAudience.ageRange.min}-{campaign.targetAudience.ageRange.max} years
+                        {(campaign.targetAudience.ageRange as any).min}-{(campaign.targetAudience.ageRange as any).max} years
                       </span>
                     </div>
                   )}
-                  {'location' in campaign.targetAudience && (
+                  {campaign.targetAudience && 'location' in campaign.targetAudience && (
                     <div>
                       <span className="text-gray-600">Location:</span>
-                      <span className="ml-2 font-medium">{campaign.targetAudience.location as string}</span>
+                      <span className="ml-2 font-medium">{String(campaign.targetAudience.location)}</span>
                     </div>
                   )}
-                  {'interests' in campaign.targetAudience && Array.isArray(campaign.targetAudience.interests) && campaign.targetAudience.interests.length > 0 && (
+                  {campaign.targetAudience && 'interests' in campaign.targetAudience && Array.isArray(campaign.targetAudience.interests) && campaign.targetAudience.interests.length > 0 && (
                     <div>
                       <span className="text-gray-600">Interests:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {campaign.targetAudience.interests.map((interest: string, index: number) => (
+                        {(campaign.targetAudience.interests as string[]).map((interest: string, index: number) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {interest}
                           </Badge>
@@ -186,22 +189,22 @@ export default function CampaignDetail() {
               <div className="border-t border-gray-100 pt-4">
                 <h4 className="font-medium text-gray-900 mb-3">Ad Creative</h4>
                 <div className="space-y-2 text-sm">
-                  {'headline' in campaign.adCreative && (
+                  {campaign.adCreative && 'headline' in campaign.adCreative && (
                     <div>
                       <span className="text-gray-600">Headline:</span>
-                      <p className="font-medium mt-1">{campaign.adCreative.headline as string}</p>
+                      <p className="font-medium mt-1">{String(campaign.adCreative.headline)}</p>
                     </div>
                   )}
-                  {'description' in campaign.adCreative && (
+                  {campaign.adCreative && 'description' in campaign.adCreative && (
                     <div>
                       <span className="text-gray-600">Description:</span>
-                      <p className="text-gray-800 mt-1">{campaign.adCreative.description as string}</p>
+                      <p className="text-gray-800 mt-1">{String(campaign.adCreative.description)}</p>
                     </div>
                   )}
-                  {'callToAction' in campaign.adCreative && (
+                  {campaign.adCreative && 'callToAction' in campaign.adCreative && (
                     <div>
                       <span className="text-gray-600">Call to Action:</span>
-                      <span className="ml-2 font-medium">{campaign.adCreative.callToAction as string}</span>
+                      <span className="ml-2 font-medium">{String(campaign.adCreative.callToAction)}</span>
                     </div>
                   )}
                 </div>
@@ -210,51 +213,56 @@ export default function CampaignDetail() {
           </CardContent>
         </Card>
 
-        {/* Payment Section */}
-        <div className="space-y-6">
-          <CampaignPayment 
-            campaign={campaign}
-            onPaymentSuccess={() => {
-              // Refresh campaign data after successful payment
-              window.location.reload();
-            }}
-          />
-
-          {campaign.paymentStatus === 'paid' && (
-            <Card className="border border-gray-200">
-              <CardHeader className="border-b border-gray-100">
-                <CardTitle>Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold text-fb-blue">
-                      ${parseFloat(campaign.spent || "0").toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Spent</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold text-success">
-                      ${(totalBudget - parseFloat(campaign.spent || "0")).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Remaining</p>
-                  </div>
-                </div>
-                <div className="mt-4 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-fb-blue h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${Math.min((parseFloat(campaign.spent || "0") / totalBudget) * 100, 100)}%` 
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Budget utilization: {((parseFloat(campaign.spent || "0") / totalBudget) * 100).toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Optimization & Integration Tabs */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="payment" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="payment" data-testid="tab-payment">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Payment
+                </TabsTrigger>
+                <TabsTrigger value="optimization" data-testid="tab-optimization">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Optimization
+                </TabsTrigger>
+                <TabsTrigger value="facebook" data-testid="tab-facebook">
+                  <Facebook className="h-4 w-4 mr-2" />
+                  Facebook
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="payment" className="space-y-6">
+                <CampaignPayment 
+                  campaign={campaign}
+                  onPaymentSuccess={() => {
+                    // Refresh campaign data after successful payment
+                    window.location.reload();
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="optimization" className="space-y-6">
+                <OptimizationPanel 
+                  campaignId={campaign.id}
+                  onOptimizationApplied={() => {
+                    // Could add toast notification here
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="facebook" className="space-y-6">
+                <FacebookIntegration 
+                  campaignId={campaign.id}
+                  campaignName={campaign.name}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

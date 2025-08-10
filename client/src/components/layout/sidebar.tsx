@@ -9,7 +9,8 @@ import {
   Sparkles, 
   BarChart3,
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  Zap
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -21,6 +22,7 @@ export default function Sidebar() {
       items: [
         { path: "/", label: "Dashboard", icon: TrendingUp },
         { path: "/campaigns", label: "Campaigns", icon: Target },
+        { path: "/optimization", label: "Optimization", icon: Zap },
         { path: "/analytics", label: "Analytics", icon: BarChart3 },
       ]
     },
