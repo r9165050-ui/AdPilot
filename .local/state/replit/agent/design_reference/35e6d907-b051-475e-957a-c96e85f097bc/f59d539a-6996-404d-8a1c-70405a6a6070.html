@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdFlow Pro - Meta Advertising Automation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'fb-blue': '#1877F2',
+                        'ig-pink': '#E4405F',
+                        'success': '#00D084',
+                        'bg-light': '#F0F2F5',
+                        'text-dark': '#1C1E21',
+                        'warning': '#FF6B35'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-bg-light font-inter">
+    <!-- @COMPONENT: AppHeader -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-fb-blue rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bolt text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-semibold text-text-dark">AdFlow Pro</h1>
+                    </div>
+                    <nav class="hidden md:flex space-x-6">
+                        <a href="#" class="text-fb-blue border-b-2 border-fb-blue pb-4 px-1 text-sm font-medium">Dashboard</a>
+                        <a href="#" class="text-gray-500 hover:text-text-dark pb-4 px-1 text-sm font-medium">Campaigns</a>
+                        <a href="#" class="text-gray-500 hover:text-text-dark pb-4 px-1 text-sm font-medium">Templates</a>
+                        <a href="#" class="text-gray-500 hover:text-text-dark pb-4 px-1 text-sm font-medium">Analytics</a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="bg-fb-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Create Campaign
+                    </button>
+                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: AppHeader -->
+
+    <div class="flex">
+        <!-- @COMPONENT: Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 min-h-screen hidden lg:block">
+            <div class="p-4 space-y-6">
+                <div>
+                    <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Campaign Management</h3>
+                    <nav class="space-y-1">
+                        <a href="#" class="bg-fb-blue bg-opacity-10 text-fb-blue px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-chart-line mr-3"></i>Overview
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fab fa-facebook mr-3"></i>Facebook Ads
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fab fa-instagram mr-3"></i>Instagram Ads
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-bullseye mr-3"></i>Audience Manager
+                        </a>
+                    </nav>
+                </div>
+                
+                <div>
+                    <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Tools</h3>
+                    <nav class="space-y-1">
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-magic mr-3"></i>Ad Builder
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-copy mr-3"></i>Templates
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-robot mr-3"></i>Automation
+                        </a>
+                    </nav>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Account</h3>
+                    <nav class="space-y-1">
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-cog mr-3"></i>Settings
+                        </a>
+                        <a href="#" class="text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-question-circle mr-3"></i>Support
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <!-- @COMPONENT: DashboardStats -->
+            <div class="mb-8">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-text-dark">Campaign Dashboard</h2>
+                        <p class="text-gray-500 mt-1">Monitor and optimize your Meta advertising campaigns</p>
+                    </div>
+                    <div class="mt-4 sm:mt-0 flex space-x-3">
+                        <button class="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button class="bg-fb-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600">
+                            <i class="fas fa-plus mr-2"></i>New Campaign
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-fb-blue bg-opacity-10 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-eye text-fb-blue"></i>
+                            </div>
+                            <span class="text-success text-sm font-medium">+12%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-text-dark mb-1" data-bind="stats.impressions">2.4M</h3>
+                        <p class="text-gray-500 text-sm">Impressions</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-ig-pink bg-opacity-10 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-mouse-pointer text-ig-pink"></i>
+                            </div>
+                            <span class="text-success text-sm font-medium">+8%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-text-dark mb-1" data-bind="stats.clicks">48.2K</h3>
+                        <p class="text-gray-500 text-sm">Clicks</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-success bg-opacity-10 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-percentage text-success"></i>
+                            </div>
+                            <span class="text-success text-sm font-medium">+2.1%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-text-dark mb-1" data-bind="stats.ctr">2.01%</h3>
+                        <p class="text-gray-500 text-sm">CTR</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-warning bg-opacity-10 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-dollar-sign text-warning"></i>
+                            </div>
+                            <span class="text-success text-sm font-medium">-15%</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-text-dark mb-1" data-bind="stats.cpc">$0.84</h3>
+                        <p class="text-gray-500 text-sm">Cost per Click</p>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: DashboardStats -->
+
+            <!-- @COMPONENT: QuickActions -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+                        <div class="p-6 border-b border-gray-100">
+                            <h3 class="text-lg font-semibold text-text-dark mb-1">Quick Campaign Creation</h3>
+                            <p class="text-gray-500 text-sm">Get your ads running in minutes with our automation</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button class="p-4 border border-gray-200 rounded-lg hover:border-fb-blue hover:bg-fb-blue hover:bg-opacity-5 transition-all group">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-fb-blue bg-opacity-10 rounded-lg flex items-center justify-center group-hover:bg-fb-blue group-hover:bg-opacity-20">
+                                            <i class="fab fa-facebook text-fb-blue"></i>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="font-medium text-text-dark">Facebook Campaign</p>
+                                            <p class="text-sm text-gray-500">Launch Facebook ads quickly</p>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button class="p-4 border border-gray-200 rounded-lg hover:border-ig-pink hover:bg-ig-pink hover:bg-opacity-5 transition-all group">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-ig-pink bg-opacity-10 rounded-lg flex items-center justify-center group-hover:bg-ig-pink group-hover:bg-opacity-20">
+                                            <i class="fab fa-instagram text-ig-pink"></i>
+                                        </div>
+                                        <div class="text-left">
+                                            <p class="font-medium text-text-dark">Instagram Campaign</p>
+                                            <p class="text-sm text-gray-500">Create Instagram ads</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-100">
+                                <button class="w-full bg-fb-blue text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                                    <i class="fas fa-magic mr-2"></i>Start Smart Campaign Wizard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-text-dark mb-4">Today's Budget</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Spent</span>
+                                <span class="font-semibold text-text-dark" data-bind="budget.spent">$1,247</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600">Remaining</span>
+                                <span class="font-semibold text-success" data-bind="budget.remaining">$753</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-fb-blue h-2 rounded-full" style="width: 62%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                        <h3 class="text-lg font-semibold text-text-dark mb-4">Active Campaigns</h3>
+                        <div class="space-y-3">
+                            <div class="text-3xl font-bold text-success" data-bind="campaigns.active">12</div>
+                            <p class="text-gray-500 text-sm">Running campaigns</p>
+                            <div class="flex items-center text-sm text-success">
+                                <i class="fas fa-arrow-up mr-1"></i>
+                                <span>3 new this week</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: QuickActions -->
+
+            <!-- @COMPONENT: CampaignList -->
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-text-dark">Recent Campaigns</h3>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-500">Filter:</label>
+                                <select class="border border-gray-200 rounded-lg px-3 py-1 text-sm">
+                                    <option>All Campaigns</option>
+                                    <option>Active</option>
+                                    <option>Paused</option>
+                                    <option>Draft</option>
+                                </select>
+                            </div>
+                            <button class="text-fb-blue hover:bg-fb-blue hover:bg-opacity-10 px-3 py-1 rounded-lg text-sm font-medium">
+                                View All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Campaign</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Platform</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                                <th class="text-right py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Budget</th>
+                                <th class="text-right py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Spent</th>
+                                <th class="text-right py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">CTR</th>
+                                <th class="text-right py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <!-- @MAP: campaigns.map(campaign => ( -->
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- A creative advertisement mockup showing a product showcase -->
+                                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Campaign thumbnail" class="w-10 h-10 rounded-lg object-cover">
+                                        <div>
+                                            <p class="font-medium text-text-dark" data-bind="campaign.name">Summer Sale 2024</p>
+                                            <p class="text-sm text-gray-500" data-bind="campaign.created">Created 2 days ago</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-facebook text-fb-blue"></i>
+                                        <i class="fab fa-instagram text-ig-pink"></i>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-success bg-opacity-10 text-success">
+                                        <div class="w-1.5 h-1.5 bg-success rounded-full mr-2"></div>
+                                        Active
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-right font-medium text-text-dark" data-bind="campaign.budget">$500</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.spent">$287</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.ctr">2.3%</td>
+                                <td class="py-4 px-6 text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <button class="text-gray-400 hover:text-fb-blue">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-warning">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- A modern lifestyle product advertisement featuring minimalist design -->
+                                        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Campaign thumbnail" class="w-10 h-10 rounded-lg object-cover">
+                                        <div>
+                                            <p class="font-medium text-text-dark" data-bind="campaign.name">Brand Awareness Q2</p>
+                                            <p class="text-sm text-gray-500" data-bind="campaign.created">Created 5 days ago</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-instagram text-ig-pink"></i>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-warning bg-opacity-10 text-warning">
+                                        <div class="w-1.5 h-1.5 bg-warning rounded-full mr-2"></div>
+                                        Paused
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-right font-medium text-text-dark" data-bind="campaign.budget">$300</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.spent">$156</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.ctr">1.8%</td>
+                                <td class="py-4 px-6 text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <button class="text-gray-400 hover:text-fb-blue">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-success">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50" data-mock="true">
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-3">
+                                        <!-- An engaging e-commerce product display with vibrant colors -->
+                                        <img src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Campaign thumbnail" class="w-10 h-10 rounded-lg object-cover">
+                                        <div>
+                                            <p class="font-medium text-text-dark" data-bind="campaign.name">Holiday Collection</p>
+                                            <p class="text-sm text-gray-500" data-bind="campaign.created">Created 1 week ago</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fab fa-facebook text-fb-blue"></i>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-success bg-opacity-10 text-success">
+                                        <div class="w-1.5 h-1.5 bg-success rounded-full mr-2"></div>
+                                        Active
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-right font-medium text-text-dark" data-bind="campaign.budget">$800</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.spent">$621</td>
+                                <td class="py-4 px-6 text-right text-gray-600" data-bind="campaign.ctr">3.1%</td>
+                                <td class="py-4 px-6 text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <button class="text-gray-400 hover:text-fb-blue">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-warning">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-ellipsis-h"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- @END_MAP )) -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: CampaignList -->
+        </main>
+    </div>
+
+    <!-- @COMPONENT: CampaignWizardModal -->
+    <div id="campaignModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-text-dark">Create New Campaign</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div class="mt-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-fb-blue text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
+                            <span class="text-fb-blue font-medium text-sm">Campaign Setup</span>
+                        </div>
+                        <div class="flex-1 h-px bg-gray-200"></div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-sm">2</div>
+                            <span class="text-gray-500 text-sm">Ad Creation</span>
+                        </div>
+                        <div class="flex-1 h-px bg-gray-200"></div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-sm">3</div>
+                            <span class="text-gray-500 text-sm">Review & Launch</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <form class="space-y-6" data-implementation="Should handle multi-step form submission">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-text-dark mb-2">Campaign Name</label>
+                            <input type="text" placeholder="Enter campaign name" class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fb-blue focus:border-fb-blue">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-text-dark mb-2">Campaign Objective</label>
+                            <select class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fb-blue focus:border-fb-blue">
+                                <option>Brand Awareness</option>
+                                <option>Traffic</option>
+                                <option>Conversions</option>
+                                <option>Lead Generation</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-3">Platform Selection</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-fb-blue">
+                                <input type="checkbox" class="mr-3">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-facebook text-fb-blue text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-text-dark">Facebook</p>
+                                        <p class="text-sm text-gray-500">Reach broad audience</p>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-ig-pink">
+                                <input type="checkbox" class="mr-3">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-instagram text-ig-pink text-xl"></i>
+                                    <div>
+                                        <p class="font-medium text-text-dark">Instagram</p>
+                                        <p class="text-sm text-gray-500">Visual storytelling</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-text-dark mb-2">Daily Budget</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-500">$</span>
+                                <input type="number" placeholder="50" class="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-fb-blue focus:border-fb-blue">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-text-dark mb-2">Campaign Duration</label>
+                            <select class="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-fb-blue focus:border-fb-blue">
+                                <option>7 days</option>
+                                <option>14 days</option>
+                                <option>30 days</option>
+                                <option>Custom</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-3">Target Audience</label>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Age Range</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="number" placeholder="18" class="w-full text-sm border border-gray-200 rounded px-2 py-1">
+                                        <span class="text-gray-400">-</span>
+                                        <input type="number" placeholder="65" class="w-full text-sm border border-gray-200 rounded px-2 py-1">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Location</label>
+                                    <input type="text" placeholder="United States" class="w-full text-sm border border-gray-200 rounded px-2 py-1">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Interests</label>
+                                    <input type="text" placeholder="Fashion, Shopping" class="w-full text-sm border border-gray-200 rounded px-2 py-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 rounded-b-xl">
+                <div class="flex justify-between items-center">
+                    <button onclick="closeModal()" class="px-6 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+                        Cancel
+                    </button>
+                    <div class="flex space-x-3">
+                        <button class="px-6 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
+                            Save Draft
+                        </button>
+                        <button class="px-6 py-2 bg-fb-blue text-white rounded-lg hover:bg-blue-600 font-medium">
+                            Next Step <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: CampaignWizardModal -->
+
+    <!-- @COMPONENT: ToastNotification -->
+    <div id="toast" class="fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 hidden z-50 max-w-sm">
+        <div class="flex items-start space-x-3">
+            <div class="w-5 h-5 bg-success rounded-full flex items-center justify-center mt-0.5">
+                <i class="fas fa-check text-white text-xs"></i>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm font-medium text-text-dark">Campaign Created Successfully</p>
+                <p class="text-xs text-gray-500 mt-1">Your campaign is now live and running</p>
+            </div>
+            <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ToastNotification -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        
+        (function() {
+            // Modal functionality
+            window.openModal = function() {
+                document.getElementById('campaignModal').classList.remove('hidden');
+                document.getElementById('campaignModal').classList.add('flex');
+            };
+
+            window.closeModal = function() {
+                document.getElementById('campaignModal').classList.add('hidden');
+                document.getElementById('campaignModal').classList.remove('flex');
+            };
+
+            // Toast notification
+            window.showToast = function() {
+                document.getElementById('toast').classList.remove('hidden');
+                setTimeout(() => {
+                    hideToast();
+                }, 5000);
+            };
+
+            window.hideToast = function() {
+                document.getElementById('toast').classList.add('hidden');
+            };
+
+            // Add click listeners to campaign creation buttons
+            document.addEventListener('DOMContentLoaded', function() {
+                const campaignButtons = document.querySelectorAll('button[class*="bg-fb-blue"]:not([onclick])');
+                campaignButtons.forEach(button => {
+                    if (button.textContent.includes('Campaign') || button.textContent.includes('Wizard')) {
+                        button.addEventListener('click', openModal);
+                    }
+                });
+            });
+
+            // Close modal on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            // Close modal on backdrop click
+            document.getElementById('campaignModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
