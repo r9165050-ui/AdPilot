@@ -6,7 +6,8 @@ import {
   Target, 
   Wand2, 
   Copy, 
-  Bot, 
+  Sparkles, 
+  BarChart3,
   Settings, 
   HelpCircle 
 } from "lucide-react";
@@ -18,18 +19,16 @@ export default function Sidebar() {
     {
       title: "Campaign Management",
       items: [
-        { path: "/", label: "Overview", icon: TrendingUp },
-        { path: "/campaigns?platform=facebook", label: "Facebook Ads", icon: Facebook },
-        { path: "/campaigns?platform=instagram", label: "Instagram Ads", icon: Instagram },
-        { path: "/audience", label: "Audience Manager", icon: Target },
+        { path: "/", label: "Dashboard", icon: TrendingUp },
+        { path: "/campaigns", label: "Campaigns", icon: Target },
+        { path: "/analytics", label: "Analytics", icon: BarChart3 },
       ]
     },
     {
-      title: "Tools",
+      title: "Creative Tools",
       items: [
-        { path: "/builder", label: "Ad Builder", icon: Wand2 },
         { path: "/templates", label: "Templates", icon: Copy },
-        { path: "/automation", label: "Automation", icon: Bot },
+        { path: "/ai-tools", label: "AI Tools", icon: Sparkles },
       ]
     },
     {

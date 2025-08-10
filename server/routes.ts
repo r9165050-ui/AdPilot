@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCampaignSchema, insertAdTemplateSchema } from "@shared/schema";
 import { z } from "zod";
+import { generateAdCopy, optimizeAdCopy, type AdCopyRequest } from "./ai-copy-generator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get dashboard stats
@@ -115,6 +116,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch campaign metrics" });
+    }
+  });
+
+  // AI-powered ad copy generation
+  app.post("/api/ai/generate-copy", async (req, res) => {
+    try {
+      const adCopyRequest: AdCopyRequest = req.body;
+      const generatedCopy = await generateAdCopy(adCopyRequest);
+      res.json(generatedCopy);
+    } catch (error) {
+      console.error("Error generating ad copy:", error);
+      if (error instanceof Error && error.message.includes("API key not configured")) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables." 
+        });
+      }
+      res.status(500).json({ message: "Failed to generate ad copy" });
+    }
+  });
+
+  // AI-powered ad copy optimization
+  app.post("/api/ai/optimize-copy", async (req, res) => {
+    try {
+      const { originalCopy, platform, objective, performanceData } = req.body;
+      const optimizedResult = await optimizeAdCopy(originalCopy, platform, objective, performanceData);
+      res.json(optimizedResult);
+    } catch (error) {
+      console.error("Error optimizing ad copy:", error);
+      if (error instanceof Error && error.message.includes("API key not configured")) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables." 
+        });
+      }
+      res.status(500).json({ message: "Failed to optimize ad copy" });
     }
   });
 

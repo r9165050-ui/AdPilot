@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import Campaigns from "@/pages/campaigns";
 import Templates from "@/pages/templates";
 import Analytics from "@/pages/analytics";
+import AITools from "@/pages/ai-tools";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
@@ -23,6 +24,7 @@ function Router() {
             <Route path="/campaigns" component={Campaigns} />
             <Route path="/templates" component={Templates} />
             <Route path="/analytics" component={Analytics} />
+            <Route path="/ai-tools" component={AITools} />
             <Route component={NotFound} />
           </Switch>
         </main>

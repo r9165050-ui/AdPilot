@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Facebook, Instagram, ArrowRight } from "lucide-react";
 import ProgressIndicator from "@/components/ui/progress-indicator";
+import AdCopyGenerator from "@/components/ai/ad-copy-generator";
 import type { CampaignFormData } from "@/lib/types";
 
 const campaignSchema = z.object({
@@ -37,10 +38,11 @@ interface CampaignWizardProps {
 
 export default function CampaignWizard({ onClose }: CampaignWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [generatedAdCopy, setGeneratedAdCopy] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const steps = ["Campaign Setup", "Ad Creation", "Review & Launch"];
+  const steps = ["Campaign Setup", "AI Ad Creation", "Review & Launch"];
 
   const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
@@ -277,12 +279,20 @@ export default function CampaignWizard({ onClose }: CampaignWizardProps) {
           )}
 
           {currentStep === 1 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-semibold text-text-dark mb-4">Ad Creation</h3>
-              <p className="text-gray-500 mb-8">This step would include ad creative tools and templates</p>
-              <div className="bg-gray-100 rounded-lg p-8 text-gray-500">
-                Ad creation interface would be implemented here
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold text-text-dark mb-2">AI-Powered Ad Creation</h3>
+                <p className="text-gray-500">Generate compelling ad copy using artificial intelligence</p>
               </div>
+              
+              <AdCopyGenerator
+                campaignData={{
+                  objective: form.getValues("objective"),
+                  platforms: form.getValues("platforms"),
+                  targetAudience: form.getValues("targetAudience"),
+                }}
+                onCopyGenerated={(copy) => setGeneratedAdCopy(copy)}
+              />
             </div>
           )}
 
