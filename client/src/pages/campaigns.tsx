@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Facebook, Instagram, Edit, Pause, Play, MoreHorizontal, Plus } from "lucide-react";
+import { Facebook, Instagram, Edit, Pause, Play, MoreHorizontal, Plus, CreditCard } from "lucide-react";
 import type { Campaign } from "@shared/schema";
 import { useState } from "react";
+import { Link } from "wouter";
 import CampaignWizard from "@/components/campaigns/campaign-wizard";
 
 export default function Campaigns() {
@@ -88,62 +89,68 @@ export default function Campaigns() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {campaigns?.map((campaign) => (
-              <Card key={campaign.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg" />
-                      <div>
-                        <h3 className="font-semibold text-text-dark">{campaign.name}</h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {getPlatformIcons(campaign.platforms)}
+              <Link key={campaign.id} href={`/campaigns/${campaign.id}`}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg" />
+                        <div>
+                          <h3 className="font-semibold text-text-dark">{campaign.name}</h3>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {getPlatformIcons(campaign.platforms)}
+                          </div>
                         </div>
                       </div>
+                      <div className="space-y-1">
+                        <Badge className={`${getStatusColor(campaign.status)} border-0`}>
+                          {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                        </Badge>
+                        {campaign.paymentStatus === "pending" && (
+                          <div className="flex items-center space-x-1">
+                            <CreditCard className="text-warning" size={12} />
+                            <span className="text-xs text-warning">Payment Required</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={`${getStatusColor(campaign.status)} border-0`}>
-                      {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Daily Budget</p>
-                      <p className="font-semibold">${campaign.dailyBudget}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Daily Budget</p>
+                        <p className="font-semibold">${campaign.dailyBudget}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Spent</p>
+                        <p className="font-semibold">${campaign.spent}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Duration</p>
+                        <p className="font-semibold">{campaign.duration} days</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Total Budget</p>
+                        <p className="font-semibold text-fb-blue">
+                          ${(parseFloat(campaign.dailyBudget) * campaign.duration).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-600">Spent</p>
-                      <p className="font-semibold">${campaign.spent}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Duration</p>
-                      <p className="font-semibold">{campaign.duration} days</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Objective</p>
-                      <p className="font-semibold text-xs capitalize">
-                        {campaign.objective.replace('_', ' ')}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <p className="text-xs text-gray-500">
+                        Created {new Date(campaign.createdAt!).toLocaleDateString()}
                       </p>
+                      <div className="flex items-center space-x-1">
+                        {campaign.paymentStatus === "paid" && (
+                          <Badge variant="secondary" className="text-xs bg-success bg-opacity-10 text-success">
+                            Funded
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-500">
-                      Created {new Date(campaign.createdAt!).toLocaleDateString()}
-                    </p>
-                    <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-fb-blue">
-                        <Edit size={14} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-warning">
-                        {campaign.status === 'active' ? <Pause size={14} /> : <Play size={14} />}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                        <MoreHorizontal size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

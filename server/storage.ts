@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Campaign, type InsertCampaign, type AdTemplate, type InsertAdTemplate, type CampaignMetrics, type InsertCampaignMetrics } from "@shared/schema";
+import { type User, type InsertUser, type Campaign, type InsertCampaign, type AdTemplate, type InsertAdTemplate, type CampaignMetrics, type InsertCampaignMetrics, type Payment, type InsertPayment } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -33,6 +33,11 @@ export interface IStorage {
     totalSpent: number;
     budgetRemaining: number;
   }>;
+
+  // Payments
+  getPaymentsByCampaign(campaignId: string): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePaymentByStripeId(stripePaymentIntentId: string, updates: Partial<Payment>): Promise<Payment | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -40,15 +45,18 @@ export class MemStorage implements IStorage {
   private campaigns: Map<string, Campaign>;
   private adTemplates: Map<string, AdTemplate>;
   private campaignMetrics: Map<string, CampaignMetrics>;
+  private payments: Map<string, Payment>;
 
   constructor() {
     this.users = new Map();
     this.campaigns = new Map();
     this.adTemplates = new Map();
     this.campaignMetrics = new Map();
+    this.payments = new Map();
     
-    // Initialize with some ad templates
+    // Initialize with some ad templates and sample campaigns
     this.initializeAdTemplates();
+    this.initializeSampleCampaigns();
   }
 
   private initializeAdTemplates() {
@@ -99,6 +107,72 @@ export class MemStorage implements IStorage {
     
     templates.forEach(template => {
       this.adTemplates.set(template.id, template);
+    });
+  }
+
+  private initializeSampleCampaigns() {
+    // Create a sample user first
+    const sampleUser: User = {
+      id: "sample-user",
+      username: "demo@example.com",
+      password: "hashed",
+      email: "demo@example.com",
+      createdAt: new Date(),
+    };
+    this.users.set(sampleUser.id, sampleUser);
+
+    // Create sample campaigns with different payment statuses
+    const sampleCampaigns: Campaign[] = [
+      {
+        id: "sample-campaign-1",
+        name: "Holiday Sale Campaign",
+        objective: "conversions",
+        platforms: ["facebook", "instagram"],
+        status: "draft",
+        paymentStatus: "pending",
+        dailyBudget: "50.00",
+        duration: 14,
+        spent: "0.00",
+        userId: "sample-user",
+        targetAudience: {
+          ageRange: { min: 25, max: 45 },
+          location: "United States",
+          interests: ["shopping", "fashion", "lifestyle"]
+        },
+        adCreative: {
+          headline: "Holiday Sale - 30% Off Everything",
+          description: "Don't miss our biggest sale of the year. Shop now and save on all your favorite items.",
+          callToAction: "Shop Now"
+        },
+        createdAt: new Date(),
+      },
+      {
+        id: "sample-campaign-2",
+        name: "Brand Awareness Drive",
+        objective: "brand_awareness",
+        platforms: ["facebook"],
+        status: "active",
+        paymentStatus: "paid",
+        dailyBudget: "25.00",
+        duration: 7,
+        spent: "87.50",
+        userId: "sample-user",
+        targetAudience: {
+          ageRange: { min: 18, max: 65 },
+          location: "North America",
+          interests: ["technology", "innovation"]
+        },
+        adCreative: {
+          headline: "Discover Innovation",
+          description: "Leading the future with cutting-edge technology solutions.",
+          callToAction: "Learn More"
+        },
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      }
+    ];
+
+    sampleCampaigns.forEach(campaign => {
+      this.campaigns.set(campaign.id, campaign);
     });
   }
 
@@ -226,6 +300,43 @@ export class MemStorage implements IStorage {
       totalSpent,
       budgetRemaining: totalBudget - totalSpent,
     };
+  }
+
+  async getPaymentsByCampaign(campaignId: string): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(
+      payment => payment.campaignId === campaignId
+    );
+  }
+
+  async createPayment(paymentData: InsertPayment): Promise<Payment> {
+    const id = randomUUID();
+    const payment: Payment = {
+      ...paymentData,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.payments.set(id, payment);
+    return payment;
+  }
+
+  async updatePaymentByStripeId(stripePaymentIntentId: string, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const payment = Array.from(this.payments.values()).find(
+      p => p.stripePaymentIntentId === stripePaymentIntentId
+    );
+    
+    if (!payment) {
+      return undefined;
+    }
+
+    const updatedPayment: Payment = {
+      ...payment,
+      ...updates,
+      updatedAt: new Date(),
+    };
+    
+    this.payments.set(payment.id, updatedPayment);
+    return updatedPayment;
   }
 }
 

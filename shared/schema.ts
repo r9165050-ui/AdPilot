@@ -16,10 +16,12 @@ export const campaigns = pgTable("campaigns", {
   objective: text("objective").notNull(),
   platforms: text("platforms").array().notNull(),
   status: text("status").notNull().default("draft"), // draft, active, paused, completed
+  paymentStatus: text("payment_status").notNull().default("pending"), // pending, paid, failed, refunded
   dailyBudget: decimal("daily_budget", { precision: 10, scale: 2 }).notNull(),
   totalBudget: decimal("total_budget", { precision: 10, scale: 2 }),
   spent: decimal("spent", { precision: 10, scale: 2 }).default("0"),
   duration: integer("duration").notNull(), // days
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
   targetAudience: jsonb("target_audience").notNull(),
   adCreative: jsonb("ad_creative"),
   metrics: jsonb("metrics").default({}),
@@ -50,6 +52,20 @@ export const campaignMetrics = pgTable("campaign_metrics", {
   cost: decimal("cost", { precision: 10, scale: 2 }).default("0"),
 });
 
+export const payments = pgTable("payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => campaigns.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("pending"), // pending, succeeded, failed, canceled
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  stripeClientSecret: text("stripe_client_secret"),
+  paymentMethod: text("payment_method"), // card type, last4, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -72,6 +88,12 @@ export const insertCampaignMetricsSchema = createInsertSchema(campaignMetrics).o
   id: true,
 });
 
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
@@ -80,3 +102,5 @@ export type InsertAdTemplate = z.infer<typeof insertAdTemplateSchema>;
 export type AdTemplate = typeof adTemplates.$inferSelect;
 export type InsertCampaignMetrics = z.infer<typeof insertCampaignMetricsSchema>;
 export type CampaignMetrics = typeof campaignMetrics.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type Payment = typeof payments.$inferSelect;

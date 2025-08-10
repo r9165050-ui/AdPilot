@@ -1,16 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCampaignSchema, insertAdTemplateSchema } from "@shared/schema";
+import { insertCampaignSchema, insertAdTemplateSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateAdCopy, optimizeAdCopy, type AdCopyRequest } from "./ai-copy-generator";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get dashboard stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {
-      // For demo purposes, using a mock user ID
-      const userId = "demo-user-id";
+      // For demo purposes, using the sample user ID
+      const userId = "sample-user";
       const stats = await storage.getDashboardStats(userId);
       res.json(stats);
     } catch (error) {
@@ -21,8 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get campaigns
   app.get("/api/campaigns", async (req, res) => {
     try {
-      // For demo purposes, using a mock user ID
-      const userId = "demo-user-id";
+      // For demo purposes, using the sample user ID
+      const userId = "sample-user";
       const campaigns = await storage.getCampaigns(userId);
       res.json(campaigns);
     } catch (error) {
@@ -47,8 +55,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/campaigns", async (req, res) => {
     try {
       const validatedData = insertCampaignSchema.parse(req.body);
-      // For demo purposes, using a mock user ID
-      const userId = "demo-user-id";
+      // For demo purposes, using the sample user ID
+      const userId = "sample-user";
       const campaign = await storage.createCampaign({ ...validatedData, userId });
       res.status(201).json(campaign);
     } catch (error) {
@@ -150,6 +158,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       res.status(500).json({ message: "Failed to optimize ad copy" });
+    }
+  });
+
+  // Payment processing routes
+  app.post("/api/campaigns/:id/payment", async (req, res) => {
+    try {
+      const campaignId = req.params.id;
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      if (campaign.paymentStatus === "paid") {
+        return res.status(400).json({ message: "Campaign already paid" });
+      }
+
+      // Calculate total campaign cost (daily budget * duration)
+      const totalAmount = parseFloat(campaign.dailyBudget) * campaign.duration;
+      
+      // Create payment intent with Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(totalAmount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          campaignId: campaign.id,
+          campaignName: campaign.name,
+        },
+      });
+
+      // Store payment record
+      await storage.createPayment({
+        campaignId: campaign.id,
+        userId: campaign.userId,
+        amount: totalAmount.toString(),
+        currency: "usd",
+        status: "pending",
+        stripePaymentIntentId: paymentIntent.id,
+        stripeClientSecret: paymentIntent.client_secret,
+      });
+
+      // Update campaign with payment intent ID
+      await storage.updateCampaign(campaign.id, {
+        stripePaymentIntentId: paymentIntent.id,
+      });
+
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        amount: totalAmount,
+        campaignName: campaign.name
+      });
+    } catch (error: any) {
+      console.error("Payment creation error:", error);
+      res.status(500).json({ 
+        message: "Failed to create payment intent",
+        error: error.message 
+      });
+    }
+  });
+
+  // Confirm payment and activate campaign
+  app.post("/api/campaigns/:id/confirm-payment", async (req, res) => {
+    try {
+      const campaignId = req.params.id;
+      const { paymentIntentId } = req.body;
+
+      // Retrieve payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === "succeeded") {
+        // Update campaign status
+        await storage.updateCampaign(campaignId, {
+          paymentStatus: "paid",
+          status: "active",
+        });
+
+        // Update payment record
+        await storage.updatePaymentByStripeId(paymentIntentId, {
+          status: "succeeded",
+          paymentMethod: paymentIntent.payment_method ? 
+            `${paymentIntent.payment_method}` : "card",
+        });
+
+        res.json({ 
+          success: true, 
+          message: "Campaign funded and activated successfully" 
+        });
+      } else {
+        await storage.updateCampaign(campaignId, {
+          paymentStatus: "failed",
+        });
+
+        await storage.updatePaymentByStripeId(paymentIntentId, {
+          status: "failed",
+        });
+
+        res.status(400).json({ 
+          success: false, 
+          message: "Payment failed" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Payment confirmation error:", error);
+      res.status(500).json({ 
+        message: "Failed to confirm payment",
+        error: error.message 
+      });
+    }
+  });
+
+  // Get campaign payment status
+  app.get("/api/campaigns/:id/payment-status", async (req, res) => {
+    try {
+      const campaignId = req.params.id;
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+
+      const payments = await storage.getPaymentsByCampaign(campaignId);
+      
+      res.json({
+        paymentStatus: campaign.paymentStatus,
+        payments: payments,
+        totalAmount: parseFloat(campaign.dailyBudget) * campaign.duration,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payment status" });
     }
   });
 

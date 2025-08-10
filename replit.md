@@ -34,8 +34,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Features Architecture
 - **Campaign Management**: Multi-step wizard for campaign creation with audience targeting and ad creative management
+- **Payment Processing**: Stripe integration for secure campaign funding with real-time payment status tracking
 - **Analytics Dashboard**: Real-time metrics visualization with Recharts for campaign performance tracking
 - **Template System**: Pre-built ad templates categorized by platform (Facebook, Instagram, both) and campaign objectives
+- **AI-Powered Tools**: OpenAI-powered ad copy generation and optimization for improved campaign performance
 - **Platform Integration**: Designed for Meta advertising platforms with dedicated Facebook and Instagram campaign support
 
 ### Authentication and Authorization
