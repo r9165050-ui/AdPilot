@@ -28,6 +28,8 @@ export class RealTimeOptimizer {
   async analyzeCampaignPerformance(campaignId: string): Promise<CampaignPerformance> {
     const campaign = await storage.getCampaign(campaignId);
     const metrics = await storage.getCampaignMetrics(campaignId);
+    
+    console.log(`Analyzing campaign ${campaignId}: found campaign=${!!campaign}, metrics=${metrics?.length || 0}`);
 
     if (!campaign || !metrics.length) {
       throw new Error('Campaign or metrics not found');
@@ -203,15 +205,30 @@ export class RealTimeOptimizer {
     topRecommendations: OptimizationRecommendation[];
   }> {
     const campaigns = await storage.getCampaigns(userId);
-    const insights = await Promise.all(
-      campaigns.map(campaign => this.analyzeCampaignPerformance(campaign.id))
-    );
+    
+    // Filter campaigns that have metrics data
+    const campaignsWithMetrics = [];
+    const insights = [];
+    
+    for (const campaign of campaigns) {
+      try {
+        const metrics = await storage.getCampaignMetrics(campaign.id);
+        if (metrics.length > 0) {
+          campaignsWithMetrics.push(campaign);
+          const performance = await this.analyzeCampaignPerformance(campaign.id);
+          insights.push(performance);
+        }
+      } catch (error) {
+        // Skip campaigns without metrics
+        console.log(`Skipping campaign ${campaign.id} - no metrics available`);
+      }
+    }
 
     const needsOptimization = insights.filter(i => i.recommendations.length > 0).length;
     const allRecommendations = insights.flatMap(i => i.recommendations);
     
     // Estimate potential savings based on recommendations
-    const potentialSavings = campaigns.reduce((total, campaign) => {
+    const potentialSavings = campaignsWithMetrics.reduce((total, campaign) => {
       const dailyBudget = parseFloat(campaign.dailyBudget?.toString() || '0');
       const performance = insights.find(i => i.campaignId === campaign.id);
       
@@ -226,7 +243,7 @@ export class RealTimeOptimizer {
       .slice(0, 5);
 
     return {
-      totalCampaigns: campaigns.length,
+      totalCampaigns: campaignsWithMetrics.length,
       needsOptimization,
       potentialSavings,
       topRecommendations

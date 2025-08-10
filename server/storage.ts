@@ -57,6 +57,7 @@ export class MemStorage implements IStorage {
     // Initialize with some ad templates and sample campaigns
     this.initializeAdTemplates();
     this.initializeSampleCampaigns();
+    this.initializeSampleMetrics();
   }
 
   private initializeAdTemplates() {
@@ -115,9 +116,7 @@ export class MemStorage implements IStorage {
     const sampleUser: User = {
       id: "sample-user",
       username: "demo@example.com",
-      password: "hashed",
-      email: "demo@example.com",
-      createdAt: new Date(),
+      password: "hashed"
     };
     this.users.set(sampleUser.id, sampleUser);
 
@@ -131,9 +130,12 @@ export class MemStorage implements IStorage {
         status: "draft",
         paymentStatus: "pending",
         dailyBudget: "50.00",
+        totalBudget: "700.00",
         duration: 14,
         spent: "0.00",
         userId: "sample-user",
+        stripePaymentIntentId: null,
+        metrics: {},
         targetAudience: {
           ageRange: { min: 25, max: 45 },
           location: "United States",
@@ -145,6 +147,7 @@ export class MemStorage implements IStorage {
           callToAction: "Shop Now"
         },
         createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: "sample-campaign-2",
@@ -154,9 +157,12 @@ export class MemStorage implements IStorage {
         status: "active",
         paymentStatus: "paid",
         dailyBudget: "25.00",
+        totalBudget: "175.00",
         duration: 7,
         spent: "87.50",
         userId: "sample-user",
+        stripePaymentIntentId: null,
+        metrics: {},
         targetAudience: {
           ageRange: { min: 18, max: 65 },
           location: "North America",
@@ -168,11 +174,113 @@ export class MemStorage implements IStorage {
           callToAction: "Learn More"
         },
         createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       }
     ];
 
     sampleCampaigns.forEach(campaign => {
       this.campaigns.set(campaign.id, campaign);
+    });
+  }
+
+  private initializeSampleMetrics() {
+    // Create sample metrics for the campaigns
+    const sampleMetrics: CampaignMetrics[] = [
+      // Metrics for Holiday Sale Campaign (sample-campaign-1) - Poor performance
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-1",
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        impressions: 45000,
+        clicks: 450,
+        ctr: "1.00",
+        cpc: "2.50",
+        conversions: 18,
+        cost: "1125.00"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-1",
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        impressions: 42000,
+        clicks: 420,
+        ctr: "1.00",
+        cpc: "2.60",
+        conversions: 15,
+        cost: "1092.00"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-1",
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        impressions: 38000,
+        clicks: 380,
+        ctr: "1.00",
+        cpc: "2.70",
+        conversions: 12,
+        cost: "1026.00"
+      },
+      
+      // Metrics for Brand Awareness Drive (sample-campaign-2) - Good performance
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-2",
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        impressions: 125000,
+        clicks: 3750,
+        ctr: "3.00",
+        cpc: "0.80",
+        conversions: 225,
+        cost: "3000.00"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-2",
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
+        impressions: 130000,
+        clicks: 4290,
+        ctr: "3.30",
+        cpc: "0.75",
+        conversions: 257,
+        cost: "3217.50"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-2",
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        impressions: 135000,
+        clicks: 4725,
+        ctr: "3.50",
+        cpc: "0.70",
+        conversions: 283,
+        cost: "3307.50"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-2",
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        impressions: 128000,
+        clicks: 4352,
+        ctr: "3.40",
+        cpc: "0.72",
+        conversions: 261,
+        cost: "3133.44"
+      },
+      {
+        id: randomUUID(),
+        campaignId: "sample-campaign-2",
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+        impressions: 140000,
+        clicks: 4900,
+        ctr: "3.50",
+        cpc: "0.68",
+        conversions: 294,
+        cost: "3332.00"
+      }
+    ];
+
+    sampleMetrics.forEach(metric => {
+      this.campaignMetrics.set(metric.id, metric);
     });
   }
 
@@ -211,6 +319,9 @@ export class MemStorage implements IStorage {
       id,
       spent: "0",
       metrics: {},
+      status: campaignData.status || "draft",
+      totalBudget: campaignData.totalBudget || null,
+      stripePaymentIntentId: null,
       createdAt: now,
       updatedAt: now,
     };
