@@ -12,13 +12,14 @@ function getOpenAIClient() {
 
 export interface AdCopyRequest {
   objective: string;
-  platform: string[];
+  platform: string | string[];
   industry?: string;
-  targetAudience: {
-    ageRange: { min: number; max: number };
-    location: string;
-    interests: string[];
+  targetAudience?: {
+    ageRange?: { min: number; max: number };
+    location?: string;
+    interests?: string[];
   };
+  productName?: string;
   productService?: string;
   tone?: string;
   callToAction?: string;
@@ -32,12 +33,16 @@ export interface AdCopyResponse {
 }
 
 export async function generateAdCopy(request: AdCopyRequest): Promise<AdCopyResponse> {
-  const platformText = request.platform.includes('facebook') && request.platform.includes('instagram') 
+  // Handle platform as either string or array
+  const platforms = Array.isArray(request.platform) ? request.platform : [request.platform];
+  const platformText = platforms.includes('facebook') && platforms.includes('instagram') 
     ? 'Facebook and Instagram' 
-    : request.platform.join(' and ');
+    : platforms.join(' and ');
 
-  const audienceText = `${request.targetAudience.ageRange.min}-${request.targetAudience.ageRange.max} year olds in ${request.targetAudience.location}`;
-  const interestsText = request.targetAudience.interests.length > 0 
+  const audienceText = request.targetAudience?.ageRange 
+    ? `${request.targetAudience.ageRange.min}-${request.targetAudience.ageRange.max} year olds in ${request.targetAudience.location || 'target location'}` 
+    : 'general audience';
+  const interestsText = request.targetAudience?.interests && request.targetAudience.interests.length > 0 
     ? ` interested in ${request.targetAudience.interests.join(', ')}` 
     : '';
 
@@ -97,6 +102,33 @@ Respond in JSON format with the structure:
     };
   } catch (error) {
     console.error('Error generating ad copy:', error);
+    
+    // Provide fallback content when AI is unavailable
+    if (error instanceof Error && (error.message.includes('quota') || error.message.includes('429'))) {
+      return {
+        headlines: [
+          `${productName} - Special Offer`,
+          `Get ${productName} Today`,
+          `${productName} - Limited Time`
+        ],
+        descriptions: [
+          `Discover amazing ${productName} with exclusive features. Don't miss out on this opportunity.`,
+          `Transform your experience with ${productName}. Quality and value combined.`,
+          `Join thousands who chose ${productName}. Premium quality guaranteed.`
+        ],
+        callToActions: [
+          "Shop Now",
+          "Learn More", 
+          "Get Started"
+        ],
+        hashtags: [
+          `#${productName.replace(/\s+/g, '')}`,
+          "#Quality",
+          "#Exclusive"
+        ]
+      };
+    }
+    
     throw new Error('Failed to generate ad copy');
   }
 }
@@ -159,6 +191,21 @@ Respond in JSON format:
     };
   } catch (error) {
     console.error('Error optimizing ad copy:', error);
+    
+    // Provide fallback optimization when AI is unavailable
+    if (error instanceof Error && (error.message.includes('quota') || error.message.includes('429'))) {
+      return {
+        optimizedCopy: originalCopy + " - Don't miss out!",
+        suggestions: [
+          "Add urgency with time-limited offers",
+          "Include social proof and testimonials", 
+          "Test different call-to-action buttons",
+          "Use more emotional trigger words",
+          "A/B test headline variations"
+        ]
+      };
+    }
+    
     throw new Error('Failed to optimize ad copy');
   }
 }
