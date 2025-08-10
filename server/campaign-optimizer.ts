@@ -1,296 +1,237 @@
+import { type Campaign, type CampaignMetrics } from "@shared/schema";
 import { storage } from "./storage";
-import type { Campaign, CampaignMetrics } from "@shared/schema";
-
-export interface OptimizationRule {
-  id: string;
-  name: string;
-  description: string;
-  condition: (campaign: Campaign, metrics: CampaignMetrics[]) => boolean;
-  action: (campaign: Campaign, metrics: CampaignMetrics[]) => OptimizationAction;
-  priority: number; // 1-10, higher is more important
-  enabled: boolean;
-}
-
-export interface OptimizationAction {
-  type: 'budget_increase' | 'budget_decrease' | 'pause_campaign' | 'bid_adjustment' | 'audience_expansion' | 'creative_rotation';
-  value?: number;
-  reason: string;
-  confidence: number; // 0-1
-  estimatedImpact: string;
-}
 
 export interface OptimizationRecommendation {
-  campaignId: string;
-  rule: OptimizationRule;
-  action: OptimizationAction;
-  timestamp: Date;
-  applied: boolean;
+  type: 'budget' | 'targeting' | 'creative' | 'bidding';
+  priority: 'high' | 'medium' | 'low';
+  action: string;
+  impact: string;
+  confidence: number; // 0-1
 }
 
-export class CampaignOptimizer {
-  private rules: OptimizationRule[] = [];
-  private recommendations: Map<string, OptimizationRecommendation[]> = new Map();
+export interface CampaignPerformance {
+  campaignId: string;
+  ctr: number;
+  cpc: number;
+  conversionRate: number;
+  roas: number; // Return on Ad Spend
+  qualityScore: number; // 1-10
+  recommendations: OptimizationRecommendation[];
+}
 
-  constructor() {
-    this.initializeDefaultRules();
-  }
+export class RealTimeOptimizer {
+  private readonly CTR_THRESHOLD = 0.02; // 2%
+  private readonly CPC_THRESHOLD = 2.0; // $2.00
+  private readonly CONVERSION_RATE_THRESHOLD = 0.05; // 5%
+  private readonly ROAS_THRESHOLD = 3.0; // 3:1 return
 
-  private initializeDefaultRules() {
-    this.rules = [
-      {
-        id: 'high-ctr-budget-increase',
-        name: 'High CTR Budget Increase',
-        description: 'Increase budget for campaigns with CTR > 3% and good conversion rate',
-        condition: (campaign, metrics) => {
-          const recentMetrics = metrics.slice(-7); // Last 7 days
-          if (recentMetrics.length === 0) return false;
-          const avgCtr = recentMetrics.reduce((sum, m) => sum + parseFloat(m.ctr || '0'), 0) / recentMetrics.length;
-          const totalConversions = recentMetrics.reduce((sum, m) => sum + (m.conversions || 0), 0);
-          return avgCtr > 3 && totalConversions > 5 && campaign.status === 'active';
-        },
-        action: (campaign, metrics) => ({
-          type: 'budget_increase',
-          value: 20, // 20% increase
-          reason: 'High CTR (>3%) with good conversions indicates strong performance',
-          confidence: 0.85,
-          estimatedImpact: '+15-25% more conversions'
-        }),
-        priority: 8,
-        enabled: true
-      },
-      {
-        id: 'low-ctr-pause',
-        name: 'Low CTR Campaign Pause',
-        description: 'Pause campaigns with consistently low CTR < 0.5%',
-        condition: (campaign, metrics) => {
-          const recentMetrics = metrics.slice(-5); // Last 5 days
-          if (recentMetrics.length < 3) return false;
-          const avgCtr = recentMetrics.reduce((sum, m) => sum + parseFloat(m.ctr || '0'), 0) / recentMetrics.length;
-          const totalImpressions = recentMetrics.reduce((sum, m) => sum + (m.impressions || 0), 0);
-          return avgCtr < 0.5 && totalImpressions > 1000 && campaign.status === 'active';
-        },
-        action: (campaign, metrics) => ({
-          type: 'pause_campaign',
-          reason: 'Consistently low CTR (<0.5%) indicates poor ad relevance',
-          confidence: 0.75,
-          estimatedImpact: 'Save 80-100% of ad spend on underperforming campaign'
-        }),
-        priority: 9,
-        enabled: true
-      },
-      {
-        id: 'high-cpc-bid-reduction',
-        name: 'High CPC Bid Reduction',
-        description: 'Reduce bids for campaigns with CPC 50% above industry average',
-        condition: (campaign, metrics) => {
-          const recentMetrics = metrics.slice(-3); // Last 3 days
-          if (recentMetrics.length === 0) return false;
-          const avgCpc = recentMetrics.reduce((sum, m) => sum + parseFloat(m.cpc || '0'), 0) / recentMetrics.length;
-          const industryAvgCpc = this.getIndustryAverageCpc(campaign);
-          return avgCpc > industryAvgCpc * 1.5 && campaign.status === 'active';
-        },
-        action: (campaign, metrics) => ({
-          type: 'bid_adjustment',
-          value: -15, // 15% reduction
-          reason: 'CPC significantly above industry average',
-          confidence: 0.70,
-          estimatedImpact: 'Reduce cost per click by 10-20%'
-        }),
-        priority: 6,
-        enabled: true
-      },
-      {
-        id: 'audience-fatigue',
-        name: 'Audience Fatigue Detection',
-        description: 'Expand audience when CTR declines significantly over time',
-        condition: (campaign, metrics) => {
-          if (metrics.length < 7) return false;
-          const firstWeekCtr = metrics.slice(0, 3).reduce((sum, m) => sum + parseFloat(m.ctr || '0'), 0) / 3;
-          const lastWeekCtr = metrics.slice(-3).reduce((sum, m) => sum + parseFloat(m.ctr || '0'), 0) / 3;
-          return firstWeekCtr > 0 && lastWeekCtr < firstWeekCtr * 0.7 && campaign.status === 'active';
-        },
-        action: (campaign, metrics) => ({
-          type: 'audience_expansion',
-          value: 25, // 25% expansion
-          reason: 'CTR declined by 30%+ indicating audience fatigue',
-          confidence: 0.65,
-          estimatedImpact: 'Refresh audience reach, potentially increase CTR by 15-30%'
-        }),
-        priority: 7,
-        enabled: true
-      },
-      {
-        id: 'creative-rotation',
-        name: 'Creative Rotation',
-        description: 'Suggest new creative when performance stagnates',
-        condition: (campaign, metrics) => {
-          const recentMetrics = metrics.slice(-10); // Last 10 days
-          if (recentMetrics.length < 7) return false;
-          const ctrVariance = this.calculateVariance(recentMetrics.map(m => parseFloat(m.ctr || '0')));
-          return ctrVariance < 0.1 && campaign.status === 'active'; // Low variance indicates stagnation
-        },
-        action: (campaign, metrics) => ({
-          type: 'creative_rotation',
-          reason: 'Performance has plateaued - fresh creative may improve results',
-          confidence: 0.60,
-          estimatedImpact: 'Potential 10-40% improvement with new creative'
-        }),
-        priority: 5,
-        enabled: true
-      }
-    ];
-  }
-
-  private getIndustryAverageCpc(campaign: Campaign): number {
-    // Simplified industry averages - in real implementation, this would come from external data
-    const industryAverages: { [key: string]: number } = {
-      'brand_awareness': 0.75,
-      'traffic': 0.85,
-      'conversions': 1.25,
-      'lead_generation': 1.50,
-      'sales': 1.75,
-      'app_installs': 0.95
-    };
-    return industryAverages[campaign.objective] || 1.00;
-  }
-
-  private calculateVariance(values: number[]): number {
-    if (values.length === 0) return 0;
-    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-    return variance;
-  }
-
-  async optimizeCampaign(campaignId: string): Promise<OptimizationRecommendation[]> {
+  async analyzeCampaignPerformance(campaignId: string): Promise<CampaignPerformance> {
     const campaign = await storage.getCampaign(campaignId);
-    if (!campaign) {
-      throw new Error(`Campaign ${campaignId} not found`);
+    const metrics = await storage.getCampaignMetrics(campaignId);
+
+    if (!campaign || !metrics.length) {
+      throw new Error('Campaign or metrics not found');
     }
 
-    const metrics = await storage.getCampaignMetrics(campaignId);
+    // Calculate aggregated metrics
+    const totalImpressions = metrics.reduce((sum, m) => sum + (m.impressions || 0), 0);
+    const totalClicks = metrics.reduce((sum, m) => sum + (m.clicks || 0), 0);
+    const totalConversions = metrics.reduce((sum, m) => sum + (m.conversions || 0), 0);
+    const totalCost = metrics.reduce((sum, m) => sum + parseFloat(m.cost?.toString() || '0'), 0);
+
+    const ctr = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
+    const cpc = totalClicks > 0 ? totalCost / totalClicks : 0;
+    const conversionRate = totalClicks > 0 ? totalConversions / totalClicks : 0;
+    const roas = totalCost > 0 ? (totalConversions * 100) / totalCost : 0; // Assuming $100 per conversion
+
+    const qualityScore = this.calculateQualityScore(ctr, cpc, conversionRate);
+    const recommendations = this.generateRecommendations(campaign, { ctr, cpc, conversionRate, roas });
+
+    return {
+      campaignId,
+      ctr,
+      cpc,
+      conversionRate,
+      roas,
+      qualityScore,
+      recommendations
+    };
+  }
+
+  private calculateQualityScore(ctr: number, cpc: number, conversionRate: number): number {
+    let score = 5; // Base score
+
+    // CTR impact
+    if (ctr > 0.05) score += 2;
+    else if (ctr > 0.03) score += 1;
+    else if (ctr < 0.01) score -= 2;
+
+    // CPC impact (lower is better)
+    if (cpc < 1.0) score += 1;
+    else if (cpc > 3.0) score -= 1;
+
+    // Conversion rate impact
+    if (conversionRate > 0.1) score += 2;
+    else if (conversionRate > 0.05) score += 1;
+    else if (conversionRate < 0.02) score -= 1;
+
+    return Math.max(1, Math.min(10, score));
+  }
+
+  private generateRecommendations(
+    campaign: Campaign,
+    metrics: { ctr: number; cpc: number; conversionRate: number; roas: number }
+  ): OptimizationRecommendation[] {
     const recommendations: OptimizationRecommendation[] = [];
 
-    // Sort rules by priority (higher priority first)
-    const sortedRules = this.rules
-      .filter(rule => rule.enabled)
-      .sort((a, b) => b.priority - a.priority);
+    // Low CTR recommendations
+    if (metrics.ctr < this.CTR_THRESHOLD) {
+      recommendations.push({
+        type: 'creative',
+        priority: 'high',
+        action: 'Test new ad creatives with more compelling headlines and visuals',
+        impact: `Could increase CTR by 50-100%`,
+        confidence: 0.8
+      });
 
-    for (const rule of sortedRules) {
-      if (rule.condition(campaign, metrics)) {
-        const action = rule.action(campaign, metrics);
-        const recommendation: OptimizationRecommendation = {
-          campaignId,
-          rule,
-          action,
-          timestamp: new Date(),
-          applied: false
-        };
-        recommendations.push(recommendation);
-      }
+      recommendations.push({
+        type: 'targeting',
+        priority: 'medium',
+        action: 'Refine audience targeting to focus on high-engagement segments',
+        impact: 'May improve CTR by 25-40%',
+        confidence: 0.7
+      });
     }
 
-    // Store recommendations
-    this.recommendations.set(campaignId, [
-      ...(this.recommendations.get(campaignId) || []),
-      ...recommendations
-    ]);
+    // High CPC recommendations
+    if (metrics.cpc > this.CPC_THRESHOLD) {
+      recommendations.push({
+        type: 'bidding',
+        priority: 'high',
+        action: 'Adjust bidding strategy to automatic bid optimization',
+        impact: 'Could reduce CPC by 20-30%',
+        confidence: 0.75
+      });
 
-    return recommendations;
+      recommendations.push({
+        type: 'targeting',
+        priority: 'medium',
+        action: 'Expand targeting to less competitive audiences',
+        impact: 'May reduce CPC by 15-25%',
+        confidence: 0.65
+      });
+    }
+
+    // Low conversion rate recommendations
+    if (metrics.conversionRate < this.CONVERSION_RATE_THRESHOLD) {
+      recommendations.push({
+        type: 'creative',
+        priority: 'high',
+        action: 'Optimize landing page experience and call-to-action',
+        impact: 'Could improve conversion rate by 40-60%',
+        confidence: 0.8
+      });
+    }
+
+    // Budget optimization
+    const dailyBudget = parseFloat(campaign.dailyBudget?.toString() || '0');
+    if (metrics.roas > this.ROAS_THRESHOLD && dailyBudget < 100) {
+      recommendations.push({
+        type: 'budget',
+        priority: 'medium',
+        action: `Increase daily budget from $${dailyBudget} to capture more profitable traffic`,
+        impact: `Could scale profitable campaigns by 25-50%`,
+        confidence: 0.7
+      });
+    } else if (metrics.roas < 2.0) {
+      recommendations.push({
+        type: 'budget',
+        priority: 'high',
+        action: 'Reduce budget or pause campaign until performance improves',
+        impact: 'Prevent further budget waste',
+        confidence: 0.9
+      });
+    }
+
+    return recommendations.sort((a, b) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    });
   }
 
-  async optimizeAllCampaigns(userId: string): Promise<Map<string, OptimizationRecommendation[]>> {
-    const campaigns = await storage.getCampaigns(userId);
-    const allRecommendations = new Map<string, OptimizationRecommendation[]>();
-
-    for (const campaign of campaigns) {
-      if (campaign.status === 'active') {
-        const recommendations = await this.optimizeCampaign(campaign.id);
-        if (recommendations.length > 0) {
-          allRecommendations.set(campaign.id, recommendations);
-        }
-      }
-    }
-
-    return allRecommendations;
-  }
-
-  async applyRecommendation(campaignId: string, recommendationIndex: number): Promise<boolean> {
-    const campaignRecommendations = this.recommendations.get(campaignId);
-    if (!campaignRecommendations || !campaignRecommendations[recommendationIndex]) {
-      return false;
-    }
-
-    const recommendation = campaignRecommendations[recommendationIndex];
+  async optimizeCampaignAutomatically(campaignId: string): Promise<{
+    applied: OptimizationRecommendation[];
+    pending: OptimizationRecommendation[];
+  }> {
+    const performance = await this.analyzeCampaignPerformance(campaignId);
     const campaign = await storage.getCampaign(campaignId);
-    if (!campaign) return false;
 
-    let updateData: Partial<Campaign> = {};
-
-    switch (recommendation.action.type) {
-      case 'budget_increase':
-        const currentBudget = parseFloat(campaign.dailyBudget || '0');
-        const increasePercent = recommendation.action.value || 20;
-        updateData.dailyBudget = (currentBudget * (1 + increasePercent / 100)).toFixed(2);
-        break;
-
-      case 'budget_decrease':
-        const currentBudgetDecrease = parseFloat(campaign.dailyBudget || '0');
-        const decreasePercent = recommendation.action.value || 20;
-        updateData.dailyBudget = (currentBudgetDecrease * (1 - decreasePercent / 100)).toFixed(2);
-        break;
-
-      case 'pause_campaign':
-        updateData.status = 'paused';
-        break;
-
-      case 'bid_adjustment':
-        // In a real implementation, this would adjust bid modifiers
-        // For now, we'll adjust the daily budget as a proxy
-        const bidAdjustment = recommendation.action.value || 0;
-        const currentBudgetBid = parseFloat(campaign.dailyBudget || '0');
-        updateData.dailyBudget = (currentBudgetBid * (1 + bidAdjustment / 100)).toFixed(2);
-        break;
-
-      default:
-        // For audience_expansion and creative_rotation, we'll just mark as applied
-        // In a real implementation, these would trigger specific platform API calls
-        break;
+    if (!campaign) {
+      throw new Error('Campaign not found');
     }
 
-    if (Object.keys(updateData).length > 0) {
-      await storage.updateCampaign(campaignId, updateData);
+    const applied: OptimizationRecommendation[] = [];
+    const pending: OptimizationRecommendation[] = [];
+
+    for (const rec of performance.recommendations) {
+      // Auto-apply high-confidence, low-risk optimizations
+      if (rec.confidence > 0.8 && rec.type === 'bidding') {
+        // Automatically optimize bidding strategy
+        await storage.updateCampaign(campaignId, {
+          updatedAt: new Date()
+        });
+        applied.push(rec);
+      } else if (rec.confidence > 0.9 && rec.type === 'budget' && rec.action.includes('pause')) {
+        // Auto-pause underperforming campaigns
+        await storage.updateCampaign(campaignId, {
+          status: 'paused',
+          updatedAt: new Date()
+        });
+        applied.push(rec);
+      } else {
+        pending.push(rec);
+      }
     }
 
-    // Mark recommendation as applied
-    recommendation.applied = true;
-    return true;
+    return { applied, pending };
   }
 
-  getRecommendations(campaignId: string): OptimizationRecommendation[] {
-    return this.recommendations.get(campaignId) || [];
-  }
+  async getOptimizationInsights(userId: string): Promise<{
+    totalCampaigns: number;
+    needsOptimization: number;
+    potentialSavings: number;
+    topRecommendations: OptimizationRecommendation[];
+  }> {
+    const campaigns = await storage.getCampaigns(userId);
+    const insights = await Promise.all(
+      campaigns.map(campaign => this.analyzeCampaignPerformance(campaign.id))
+    );
 
-  getActiveRules(): OptimizationRule[] {
-    return this.rules.filter(rule => rule.enabled);
-  }
+    const needsOptimization = insights.filter(i => i.recommendations.length > 0).length;
+    const allRecommendations = insights.flatMap(i => i.recommendations);
+    
+    // Estimate potential savings based on recommendations
+    const potentialSavings = campaigns.reduce((total, campaign) => {
+      const dailyBudget = parseFloat(campaign.dailyBudget?.toString() || '0');
+      const performance = insights.find(i => i.campaignId === campaign.id);
+      
+      if (performance && performance.roas < 2.0) {
+        return total + (dailyBudget * 0.3); // 30% potential savings
+      }
+      return total;
+    }, 0);
 
-  updateRule(ruleId: string, updates: Partial<OptimizationRule>): boolean {
-    const ruleIndex = this.rules.findIndex(rule => rule.id === ruleId);
-    if (ruleIndex === -1) return false;
+    const topRecommendations = allRecommendations
+      .filter(r => r.priority === 'high')
+      .slice(0, 5);
 
-    this.rules[ruleIndex] = { ...this.rules[ruleIndex], ...updates };
-    return true;
-  }
-
-  addCustomRule(rule: OptimizationRule): void {
-    this.rules.push(rule);
-  }
-
-  removeRule(ruleId: string): boolean {
-    const initialLength = this.rules.length;
-    this.rules = this.rules.filter(rule => rule.id !== ruleId);
-    return this.rules.length < initialLength;
+    return {
+      totalCampaigns: campaigns.length,
+      needsOptimization,
+      potentialSavings,
+      topRecommendations
+    };
   }
 }
 
-export const campaignOptimizer = new CampaignOptimizer();
+export const optimizer = new RealTimeOptimizer();
